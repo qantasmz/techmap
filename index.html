@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1990-2025 インターネットの変遷</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a202c; /* Dark background - will be overridden by 3D background */
+            color: #e2e8f0; /* Light text */
+        }
+        #webgl-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1;
+            transition: opacity 1s ease-in-out;
+        }
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            font-size: 2rem;
+            z-index: 2;
+        }
+        .info-panel {
+            background-color: rgba(30, 41, 59, 0.9); /* Darker blue-gray, semi-transparent */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; /* p-6 */
+            margin: 1rem; /* m-4 */
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5); /* shadow-lg */
+            backdrop-filter: blur(5px); /* Optional: for a frosted glass effect */
+            -webkit-backdrop-filter: blur(5px); /* Safari support */
+            overflow-y: auto; /* Enable scrolling for long content */
+            max-height: 80vh; /* Limit height */
+        }
+        .info-panel h1 {
+            font-size: 2.5rem; /* text-4xl */
+            font-weight: bold; /* font-bold */
+            margin-bottom: 1rem; /* mb-4 */
+            color: #63b3ed; /* blue-300 */
+        }
+        .info-panel p {
+            font-size: 1.125rem; /* text-lg */
+            margin-bottom: 0.5rem; /* mb-2 */
+            line-height: 1.6;
+        }
+        .fact-item {
+            background-color: rgba(45, 55, 72, 0.8); /* Even darker blue-gray */
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 1rem; /* p-4 */
+            margin-bottom: 1rem; /* mb-4 */
+            text-align: left;
+        }
+        .fact-item:last-child {
+            margin-bottom: 0;
+        }
+        .fact-item strong {
+            color: #90cdf4; /* blue-200 */
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <p>Loading 3D experience...</p>
+    </div>
+
+    <div id="webgl-container"></div>
+
+    <div id="overlay" class="opacity-0 pointer-events-none">
+        <div class="info-panel">
+            <h1>1990-2025 インターネットの変遷</h1>
+            <p>ようこそ、インターネットの歴史を巡る旅へ！マウスホイールを回転して年号を進めたり戻したりし、各年に関係するキーワードを体験しましょう。マウスをドラッグして視点を動かせます。</p>
+            <div id="facts-container" class="mt-6">
+                </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Global variables for Firebase configuration and app ID
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let scene, camera, renderer, internetCore, nodeMaterial;
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        const factsContainer = document.getElementById('facts-container');
+        const overlay = document.getElementById('overlay');
+        const loadingScreen = document.getElementById('loading-screen');
+
+        let currentYear = 1998; // Initial year
+        const minYear = 1990;
+        const maxYear = 2025;
+        let yearTexture; // To hold the texture for the current year on the sphere
+        let yearCanvas; // Canvas used for year texture
+        let yearContext; // Context of the year canvas
+        const keywordSprites = []; // To hold all active keyword sprites
+
+        // Define a set of vibrant colors for keywords
+        const keywordColors = [
+            { r: 255, g: 165, b: 0, a: 1.0 },   // Orange
+            { r: 0, g: 255, b: 255, a: 1.0 },   // Cyan
+            { r: 255, g: 0, b: 255, a: 1.0 },   // Magenta
+            { r: 128, g: 255, b: 0, a: 1.0 },  // Lime Green
+            { r: 255, g: 255, b: 0, a: 1.0 },  // Yellow
+            { r: 0, g: 191, b: 255, a: 1.0 },  // Deep Sky Blue
+            { r: 255, g: 99, b: 71, a: 1.0 }    // Tomato
+        ];
+
+        // Define color themes for different year ranges
+        const yearThemes = new Map([
+            // 1990s (early internet, dial-up era)
+            [1990, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }], // Blueish
+            [1991, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1992, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1993, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1994, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1995, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1996, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1997, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1998, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+            [1999, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
+
+            // 2000s (dot-com bubble, social media rise)
+            [2000, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }], // Light Salmon / Peach
+            [2001, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2002, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2003, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2004, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2005, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2006, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2007, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2008, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+            [2009, { coreColor: 0xffa07a, nodeColor: 0xffe0b2 }],
+
+            // 2010s (mobile, cloud, big data)
+            [2010, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }], // Pale Green
+            [2011, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2012, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2013, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2014, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2015, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2016, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2017, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2018, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+            [2019, { coreColor: 0x98fb98, nodeColor: 0xc8fcd8 }],
+
+            // 2020s (AI, metaverse, Web3)
+            [2020, { coreColor: 0xdda0dd, nodeColor: 0xeeddee }], // Plum / Light Purple
+            [2021, { coreColor: 0xdda0dd, nodeColor: 0xeeddee }],
+            [2022, { coreColor: 0xdda0dd, nodeColor: 0xeeddee }],
+            [2023, { coreColor: 0xdda0dd, nodeColor: 0xeeddee }],
+            [2024, { coreColor: 0xdda0dd, nodeColor: 0xeeddee }],
+            [2025, { coreColor: 0xdda0dd, nodeColor: 0xeeddee }]
+        ]);
+
+        // Keywords related to internet and digital for various years, including culture
+        const yearKeywords = new Map([
+            [1990, ["WorldWideWeb", "HTML", "FTP", "Usenet", "CERN", "UNIX", "MS-DOS", "Macintosh", "ファミコン", "スーパーファミコン", "バブル景気", "ジュリアナ東京", "トレンディドラマ", "携帯電話 (ショルダーホン)", "ポケットベル", "CD-ROM", "Windows 3.0", "DOS/V", "ネットワーク (LAN)", "電子掲示板", "パソコン通信", "ASCII", "BASIC", "8ビット", "16ビット", "ワープロ", "携帯型ゲーム機", "VHS", "カセットテープ", "J-POP"]],
+            [1991, ["WWW公開", "Gopher", "Linux", "MPEG", "WWWブラウザ", "ソニック・ザ・ヘッジホッグ", "Windows 3.1", "DOS/Vパソコン", "携帯電話普及開始", "PHS登場", "デジタルカメラ登場", "インターネット接続サービス", "ダイヤルアップ接続", "ISDN", "パソコン通信サービス拡大", "90年代ファッション", "グランジ", "Jリーグ開幕 (準備)", "バブル崩壊", "カラオケボックス", "湾岸戦争", "少年ジャンプ", "携帯ゲーム機", "CDシングル", "レンタルビデオ", "衛星放送", "J-POPヒット"]],
+            [1992, ["JPEG", "MPEG-1", "Internet Society (ISOC)", "WWWブラウザ (Lynx)", "Windows 3.1", "Macintosh System 7", "光ファイバー", "デジタル通信", "マルチメディア", "CD-ROMドライブ", "携帯電話 (小型化)", "ポケットベル進化", "Jリーグ開幕 (話題に)", "渋谷系", "小室ファミリー", "バブル崩壊本格化", "地球サミット", "プリクラ (登場前)", "ゲームボーイ", "セガサターン (話題に)", "プレイステーション (話題に)", "映画「ジュラシック・パーク」", "音楽CD", "レンタルCD", "衛星放送普及", "J-POP多様化"]],
+            [1993, ["Mosaic", "Webcam", "Internet Explorer (初期)", "GIF", "CERN WWWサーバ公開", "World Wide Web Consortium (W3C) 設立", "Windows NT", "Pentiumプロセッサ", "光ファイバー網整備", "ホームページ作成", "CGI", "電子商取引 (初期)", "Webサイト開設ブーム", "Jリーグ開幕", "渋谷系音楽", "アムラー", "コギャル", "たまごっち (登場前)", "携帯電話普及", "PHS", "デジタルカメラ", "音楽CD", "レンタルビデオ", "テレビゲーム", "衛星放送", "J-POPヒット"]],
+            [1994, ["Netscape Navigator", "Amazon.com", "Yahoo!", "W3C", "Webサーバー", "CGIスクリプト", "バナー広告", "Webデザイン", "HTML2.0", "Windows 95 (発表前)", "Pentiumプロセッサ普及", "インターネットプロバイダ", "ダイヤルアップ接続", "個人ホームページ", "Webコミュニティ", "携帯電話 (PHS普及)", "プリクラ登場", "ルーズソックス", "アムラー", "小室サウンド", "J-POPブーム", "オウム真理教事件", "阪神・淡路大震災 (話題に)", "ゲームソフト", "CDアルバム", "レンタルDVD (登場前)", "テレビゲーム", "J-POPヒット"]],
+            [1995, ["Windows 95", "Java", "JavaScript", "eBay", "RealPlayer", "Netscape Navigator 2.0", "Webブラウザ戦争", "インターネット接続サービス競争", "ISDN普及", "個人サイトブーム", "テレホーダイ", "電子メール普及", "チャットルーム", "Webリング", "HTML3.2", "Pentium Pro", "携帯電話 (PHS人気)", "プリクラ大流行", "ルーズソックス", "アムラー", "コギャル", "B'z", "Mr.Children", "阪神・淡路大震災", "オウム真理教事件", "ゲーム機 (PS, SS)", "CD-ROMゲーム", "レンタルビデオ", "J-POPヒット"]],
+            [1996, ["Hotmail", "CSS", "Flash", "ICQ", "Weblog (初期)", "Internet Explorer 3.0", "ActiveX", "Webホスティング", "CGIプログラム", "インターネットカフェ", "携帯電話 (PHS全盛)", "デジタルカメラ普及", "プリクラ進化", "渋谷系ファッション", "小室ファミリー絶頂期", "J-POP黄金期", "たまごっち (発表前)", "ポケモン (ゲームボーイ)", "プレイステーション人気", "セガサターン", "NINTENDO64", "CD-R", "MP3 (初期)", "レンタルDVD (初期)", "衛星デジタル放送", "携帯電話の普及", "J-POPヒット"]],
+            [1997, ["DVD", "Wi-Fi (初期)", "Netflix (DVDレンタル)", "Blogger (初期)", "MP3.com", "Internet Explorer 4.0", "DHTML", "Webフォント", "Webアニメーション", "インターネット広告", "携帯電話 (iモード発表前)", "デジタルカメラ (高画質化)", "たまごっち大流行", "ポケモン (アニメ)", "J-POP全盛期", "渋谷系ファッション", "援助交際 (社会問題化)", "Windows CE", "PDA", "ゲーム機 (PS, N64)", "CD-RW", "ADSL (初期)", "衛星デジタル放送普及", "レンタルDVD", "携帯電話の進化", "J-POPヒット"]],
+            [1998, ["Google", "PayPal", "MP3", "E-commerce", "Blog", "Windows 98", "ADSL (本格導入)", "DSL", "Webポータル", "オンラインショッピング", "インターネットバンキング", "携帯電話 (iモード登場)", "デジタルカメラ (メガピクセル)", "ブロードバンド (初期)", "Yahoo!オークション", "2ちゃんねる", "携帯電話普及率上昇", "プリクラ人気継続", "ルーズソックス", "アムラー", "J-POPヒット", "長野オリンピック", "映画「タイタニック」", "ゲーム (PS, N64)", "DVD普及開始", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [1999, ["Napster", "Wi-Fi Alliance", "BlackBerry (初期)", "Y2K問題", "ドットコムバブル", "ブロードバンド普及", "ADSLモデム", "DSLモデム", "オンラインゲーム (初期)", "iモード", "携帯電話 (インターネット接続)", "デジタルカメラ (高画質化)", "携帯電話普及率急増", "2ちゃんねる人気", "フラッシュアニメ", "ブログブーム", "渋谷系ファッション", "J-POP黄金期", "宇多田ヒカル", "浜崎あゆみ", "映画「マトリックス」", "ゲーム (PS2発表)", "DVDレコーダー (初期)", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2000, ["Dot-com Bubble崩壊", "Broadband", "ADSL", "Bluetooth", "USB", "Windows 2000", "Windows Me", "PlayStation 2", "光ファイバー (FTTH初期)", "常時接続", "オンラインゲーム普及", "携帯電話 (カメラ付き)", "デジタルカメラ (コンパクト化)", "ブロードバンド普及率上昇", "携帯電話インターネット接続", "2ちゃんねる全盛期", "Flashコンテンツ", "ブログ文化", "J-POP多様化", "韓流ブーム (初期)", "映画「千と千尋の神隠し」 (話題に)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "携帯電話の多機能化", "J-POPヒット"]],
+            [2001, ["Wikipedia", "iPod", "BitTorrent", "Windows XP", "iTunes", "ブロードバンド (普及加速)", "FTTH (初期)", "P2Pファイル共有", "オンラインゲーム (MMORPG)", "携帯電話 (カラー液晶)", "デジタルカメラ (高画質化)", "携帯電話 (着メロ)", "2ちゃんねる文化", "ブログ人気", "J-POP成熟期", "韓流ドラマ", "映画「ハリー・ポッター」", "ゲームキューブ", "Xbox", "DVDレコーダー普及", "レンタルDVD", "衛星デジタル放送", "携帯電話の多機能化", "J-POPヒット"]],
+            [2002, ["Friendster", "Firefox (初期)", "iTunes Music Store (初期)", "Bluetooth 1.1", "ブロードバンド普及率急増", "FTTH (本格導入)", "P2Pソフトウェア", "オンラインゲーム (人気)", "携帯電話 (写メール)", "デジタルカメラ (高機能化)", "携帯電話 (着うた)", "2ちゃんねる (社会現象)", "ブログ (個人メディア)", "J-POP多様化", "韓流ブーム", "映画「ロード・オブ・ザ・リング」", "ゲーム (PS2, GC, Xbox)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2003, ["Skype", "MySpace", "Safari", "WordPress", "VoIP", "ブロードバンド (家庭普及)", "FTTH (普及加速)", "P2P (規制強化)", "オンラインゲーム (eスポーツ初期)", "携帯電話 (ワンセグ初期)", "デジタルカメラ (一眼レフデジタル)", "携帯電話 (QRコード)", "2ちゃんねる (影響力増大)", "ブログ (アフィリエイト)", "J-POPアイドル", "韓流ドラマ人気", "映画「パイレーツ・オブ・カリビアン」", "PSP (発表)", "DS (発表)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2004, ["Facebook", "Gmail", "Flickr", "Podcast", "Web 2.0", "ブロードバンド (高速化)", "FTTH (主流化)", "P2P (違法ダウンロード)", "オンラインゲーム (課金モデル)", "携帯電話 (おサイフケータイ)", "デジタルカメラ (ミラーレス初期)", "携帯電話 (絵文字)", "mixi", "ブログ (SNS連携)", "J-POPロック", "韓流ブーム継続", "映画「スパイダーマン2」", "ニンテンドーDS", "PlayStation Portable (PSP)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2005, ["YouTube", "Google Maps", "Reddit", "Xbox 360", "Cloud Computing (初期)", "Web 2.0 (ブーム)", "ブロードバンド (高速化)", "FTTH (普及)", "P2P (合法化模索)", "オンラインゲーム (ソーシャルゲーム初期)", "携帯電話 (フルブラウザ)", "デジタルカメラ (高画質化)", "携帯電話 (ブログ連携)", "mixi全盛期", "ブログ (プロブロガー)", "J-POP多様化", "韓流ブーム定着", "映画「スター・ウォーズ エピソード3」", "Xbox 360", "PlayStation 3 (発表)", "Wii (発表)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2006, ["Twitter", "Nintendo Wii", "Kindle (初期)", "OpenStreetMap", "WebM (初期)", "Web 2.0 (浸透)", "ブロードバンド (安定化)", "FTTH (普及率上昇)", "P2P (ストリーミング)", "オンラインゲーム (MMORPG人気)", "携帯電話 (GPS)", "デジタルカメラ (一眼レフデジタル普及)", "携帯電話 (動画撮影)", "mixi (ピーク)", "ブログ (ビジネス活用)", "J-POP多様化", "韓流ブーム拡大", "映画「デスノート」", "Wii", "PlayStation 3", "DVDレコーダー", "Blu-ray (初期)", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2007, ["iPhone", "Android (発表)", "Netflix Streaming", "Hulu (初期)", "App Store (発表)", "Web 2.0 (成熟)", "ブロードバンド (高速化)", "FTTH (普及率加速)", "ストリーミングサービス", "オンラインゲーム (スマホゲーム初期)", "スマートフォン (iPhone登場)", "デジタルカメラ (ミラーレス一眼)", "携帯電話 (タッチパネル)", "mixi (SNS競争)", "ブログ (モバイル対応)", "J-POPアイドルグループ", "韓流ブーム継続", "映画「トランスフォーマー」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2008, ["Google Chrome", "Spotify (初期)", "Airbnb (初期)", "Dropbox (初期)", "4G (初期)", "Web 2.0 (進化)", "ブロードバンド (高速化)", "FTTH (普及率上昇)", "クラウドサービス", "オンラインゲーム (ソーシャルゲーム)", "スマートフォン (Android登場)", "デジタルカメラ (高画質化)", "携帯電話 (アプリストア)", "mixi (競争激化)", "ブログ (SNS連携)", "J-POP多様化", "韓流ブーム継続", "映画「ダークナイト」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2009, ["WhatsApp", "Bitcoin (初期)", "Bing", "HTML5 (標準化)", "Cloud Gaming (初期)", "Web 2.0 (定着)", "ブロードバンド (高速化)", "FTTH (普及率拡大)", "クラウドコンピューティング", "オンラインゲーム (スマホゲーム人気)", "スマートフォン (アプリエコシステム)", "デジタルカメラ (高機能化)", "携帯電話 (SNS連携)", "Twitter (人気)", "Facebook (人気)", "ブログ (動画活用)", "J-POPアイドル", "韓流ブーム継続", "映画「アバター」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2010, ["iPad", "Instagram", "Pinterest", "Siri (初期)", "Mobile Internet", "ソーシャルメディア", "スマートフォン普及", "タブレット端末", "クラウドサービス", "オンラインゲーム (ソーシャルゲーム全盛)", "携帯電話 (テザリング)", "デジタルカメラ (ミラーレス一眼人気)", "携帯電話 (LINE登場)", "Twitter (浸透)", "Facebook (浸透)", "ブログ (インフルエンサー)", "J-POP K-POP", "韓流ブーム再燃", "映画「インセプション」", "iPad", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2011, ["Google+", "Snapchat (初期)", "Twitch (初期)", "Google Wallet (初期)", "NFC (初期)", "ソーシャルメディア (多様化)", "スマートフォン (高性能化)", "タブレット端末 (普及)", "クラウドストレージ", "オンラインゲーム (eスポーツ拡大)", "携帯電話 (決済サービス)", "デジタルカメラ (Wi-Fi搭載)", "携帯電話 (ARアプリ)", "LINE (普及)", "Twitter", "Facebook", "ブログ (動画配信)", "J-POP K-POP", "韓流ブーム継続", "映画「アベンジャーズ」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2012, ["Raspberry Pi", "Oculus VR (初期)", "Windows 8", "IPv6", "Big Data", "ソーシャルメディア (動画)", "スマートフォン (大画面化)", "タブレット端末 (競争激化)", "クラウドインフラ", "オンラインゲーム (スマホゲーム多様化)", "携帯電話 (NFC決済)", "デジタルカメラ (高画質化)", "携帯電話 (クラウド連携)", "LINE (全盛期)", "Twitter", "Facebook", "ブログ (キュレーション)", "J-POP K-POP", "韓流ブーム継続", "映画「レ・ミゼラブル」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2013, ["Chromecast", "Vine", "Telegram (初期)", "Smartwatch (初期)", "IoT (初期)", "ソーシャルメディア (ライブ配信)", "スマートフォン (高性能化)", "タブレット端末 (多様化)", "クラウドセキュリティ", "オンラインゲーム (eスポーツプロ化)", "携帯電話 (ウェアラブル連携)", "デジタルカメラ (4K動画)", "携帯電話 (生体認証)", "LINE (ビジネス活用)", "Twitter", "Facebook", "ブログ (コンテンツマーケティング)", "J-POP K-POP", "韓流ブーム継続", "映画「アナと雪の女王」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2014, ["Apple Watch (発表)", "Alexa (初期)", "Periscope (初期)", "Docker", "Machine Learning (初期)", "ソーシャルメディア (動画広告)", "スマートフォン (ファブレット)", "タブレット端末 (ビジネス活用)", "クラウドネイティブ", "オンラインゲーム (モバイルゲーム市場拡大)", "携帯電話 (スマートホーム連携)", "デジタルカメラ (高感度)", "携帯電話 (顔認証)", "LINE (スタンプ経済圏)", "Twitter", "Facebook", "ブログ (SEO対策)", "J-POP K-POP", "韓流ブーム継続", "映画「ベイマックス」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2015, ["Apple Music", "Windows 10", "USB-C", "AI Assistant (初期)", "VR Headsets (初期)", "ソーシャルメディア (インフルエンサーマーケティング)", "スマートフォン (デュアルカメラ)", "タブレット端末 (教育分野)", "クラウドファンディング", "オンラインゲーム (eスポーツ観戦)", "携帯電話 (AR/VR対応)", "デジタルカメラ (高機能化)", "携帯電話 (AIアシスタント)", "LINE (決済サービス)", "Twitter", "Facebook", "ブログ (パーソナルブランディング)", "J-POP K-POP", "韓流ブーム継続", "映画「スター・ウォーズ フォースの覚醒」", "Apple Watch", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2016, ["Pokémon GO", "TikTok (初期)", "Google Home (初期)", "Nintendo Switch (発表)", "Deep Learning (普及)", "ソーシャルメディア (ライブコマース)", "スマートフォン (AIチップ)", "タブレット端末 (クリエイティブ)", "クラウドセキュリティ", "オンラインゲーム (VRゲーム)", "携帯電話 (AIカメラ)", "デジタルカメラ (動画強化)", "携帯電話 (生体認証)", "LINE (AI活用)", "Twitter", "Facebook", "ブログ (動画コンテンツ)", "J-POP K-POP", "韓流ブーム継続", "映画「君の名は。」", "Pokémon GO", "Nintendo Switch", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2017, ["Fortnite", "Face ID", "Cryptocurrency (ブーム)", "Blockchain (初期)", "ソーシャルメディア (ショート動画)", "スマートフォン (ベゼルレス)", "タブレット端末 (ペン対応)", "クラウドネイティブ", "オンラインゲーム (eスポーツ人気)", "携帯電話 (ARKit)", "デジタルカメラ (高画質化)", "携帯電話 (AI翻訳)", "LINE (AIアシスタント)", "Twitter", "Facebook", "ブログ (音声コンテンツ)", "J-POP K-POP", "韓流ブーム継続", "映画「美女と野獣」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2018, ["GDPR", "5G NR (初期)", "AI Ethics", "Smart Speakers", "Autonomous Driving (初期)", "ソーシャルメディア (フェイクニュース)", "スマートフォン (折りたたみスマホ発表)", "タブレット端末 (業務利用)", "クラウド移行", "オンラインゲーム (バトルロイヤルゲーム)", "携帯電話 (AIアシスタント)", "デジタルカメラ (動画機能強化)", "携帯電話 (eSIM)", "LINE (ニュース配信)", "Twitter", "Facebook", "ブログ (ポッドキャスト)", "J-POP K-POP", "韓流ブーム継続", "映画「ボヘミアン・ラプソディ」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2019, ["Disney+", "Apple Arcade", "Foldable Phones", "Edge Computing (初期)", "Quantum Supremacy (発表)", "ソーシャルメディア (インフルエンサー経済)", "スマートフォン (5G対応)", "タブレット端末 (クリエイティブ)", "クラウドセキュリティ", "オンラインゲーム (クラウドゲーミング)", "携帯電話 (折りたたみスマホ)", "デジタルカメラ (高機能化)", "携帯電話 (生体認証)", "LINE (金融サービス)", "Twitter", "Facebook", "ブログ (Vlog)", "J-POP K-POP", "韓流ブーム継続", "映画「天気の子」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2020, ["Remote Work", "Zoom", "COVID-19 Impact", "E-learning", "Telemedicine", "ソーシャルメディア (ライブ配信)", "スマートフォン (5G普及)", "タブレット端末 (リモートワーク)", "クラウドネイティブ", "オンラインゲーム (自宅ゲーム)", "携帯電話 (非接触決済)", "デジタルカメラ (Webカメラ化)", "携帯電話 (接触確認アプリ)", "LINE (コロナ情報)", "Twitter", "Facebook", "ブログ (オンラインイベント)", "J-POP K-POP", "韓流ブーム継続", "映画「劇場版 鬼滅の刃 無限列車編」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2021, ["Metaverse Concept", "NFTs", "Web3 (初期)", "Supply Chain Issues", "Cyberattacks", "ソーシャルメディア (VR/AR)", "スマートフォン (AI強化)", "タブレット端末 (AR/VR)", "クラウドセキュリティ", "オンラインゲーム (メタバースゲーム)", "携帯電話 (NFT対応)", "デジタルカメラ (AI編集)", "携帯電話 (デジタルID)", "LINE (NFT)", "Twitter", "Facebook", "ブログ (メタバース)", "J-POP K-POP", "韓流ブーム継続", "映画「シン・エヴァンゲリオン劇場版」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2022, ["ChatGPT", "Stable Diffusion", "AI Art", "Generative AI", "Gig Economy", "ソーシャルメディア (AI生成コンテンツ)", "スマートフォン (AI機能強化)", "タブレット端末 (AIアシスタント)", "クラウドネイティブ", "オンラインゲーム (AIキャラクター)", "携帯電話 (生成AI)", "デジタルカメラ (AI撮影)", "携帯電話 (デジタル通貨)", "LINE (AIチャット)", "Twitter", "Facebook", "ブログ (AIライティング)", "J-POP K-POP", "韓流ブーム継続", "映画「トップガン マーヴェリック」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2023, ["Large Language Models (LLM)", "AI Integration", "Spatial Computing", "Sustainable Tech", "Cyber Resilience", "ソーシャルメディア (AI推薦)", "スマートフォン (AIカメラ)", "タブレット端末 (AI学習)", "クラウドセキュリティ", "オンラインゲーム (AIアシスト)", "携帯電話 (LLM搭載)", "デジタルカメラ (AI高画質化)", "携帯電話 (Web3ウォレット)", "LINE (AI翻訳)", "Twitter", "Facebook", "ブログ (AIコンテンツ)", "J-POP K-POP", "韓流ブーム継続", "映画「ザ・スーパーマリオブラザーズ・ムービー」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2024, ["AI Agents", "Personalized AI", "Quantum Networking (初期)", "Digital Twins", "Green Computing", "ソーシャルメディア (AIパーソナライゼーション)", "スマートフォン (次世代AI)", "タブレット端末 (XR対応)", "クラウドネイティブ", "オンラインゲーム (AI生成ワールド)", "携帯電話 (AIエージェント)", "デジタルカメラ (AI動画編集)", "携帯電話 (デジタルヘルス)", "LINE (AIパーソナル)", "Twitter", "Facebook", "ブログ (AIツール活用)", "J-POP K-POP", "韓流ブーム継続", "映画「Dune: Part Two」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
+            [2025, ["Metaverse (本格化)", "Web3 (普及)", "AI Everywhere", "Quantum Computing (実用化)", "Sustainable Tech", "Human-AI Collaboration", "ソーシャルメディア (没入型体験)", "スマートフォン (AIデバイス)", "タブレット端末 (空間コンピューティング)", "クラウドセキュリティ", "オンラインゲーム (メタバース経済)", "携帯電話 (AIアシスタント)", "デジタルカメラ (AIクリエイティブ)", "携帯電話 (デジタルツイン)", "LINE (メタバース)", "Twitter", "Facebook", "ブログ (AIビジネス)", "J-POP K-POP", "韓流ブーム継続", "映画「アバター3」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]]
+        ]);
+
+        /**
+         * Creates a 3D sprite with text rendered on a 2D canvas.
+         * @param {string} message The text to display.
+         * @param {object} parameters Parameters for text rendering and sprite creation.
+         * @returns {THREE.Sprite} The created text sprite.
+         */
+        function createTextSprite(message, parameters) {
+            if (parameters === undefined) parameters = {};
+
+            const fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Roboto";
+            const fontsize = parameters.hasOwnProperty("fontsize") ? parameters["fontsize"] : 80;
+            const borderThickness = parameters.hasOwnProperty("borderThickness") ? parameters["borderThickness"] : 4;
+            const borderColor = parameters.hasOwnProperty("borderColor") ? parameters["borderColor"] : { r: 0, g: 0, b: 0, a: 1.0 };
+            const backgroundColor = parameters.hasOwnProperty("backgroundColor") ? parameters["backgroundColor"] : { r: 255, g: 255, b: 255, a: 0.0 }; // Transparent background
+            const textColor = parameters.hasOwnProperty("textColor") ? parameters["textColor"] : { r: 255, g: 165, b: 0, a: 1.0 }; // Default Orange color
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            context.font = "Bold " + fontsize + "px " + fontface;
+
+            // Get text metrics
+            const metrics = context.measureText(message);
+            const textWidth = metrics.width;
+            const textHeight = fontsize; // Approximate height
+
+            // Adjust canvas size to fit text
+            canvas.width = textWidth + borderThickness * 2;
+            canvas.height = textHeight + borderThickness * 2;
+
+            // Re-set font after resizing canvas
+            context.font = "Bold " + fontsize + "px " + fontface;
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+
+            // Background color
+            context.fillStyle = "rgba(" + backgroundColor.r + "," + backgroundColor.g + "," + backgroundColor.b + "," + backgroundColor.a + ")";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Border color
+            context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," + borderColor.b + "," + borderColor.a + ")";
+            context.lineWidth = borderThickness;
+
+            // Text color
+            context.fillStyle = "rgba(" + textColor.r + "," + textColor.g + "," + textColor.b + "," + textColor.a + ")";
+            context.fillText(message, canvas.width / 2, canvas.height / 2);
+
+            // Canvas texture
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter; // Smoother scaling for text
+
+            // Sprite material
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+
+            // Scale sprite based on canvas dimensions to maintain aspect ratio
+            const aspectRatio = canvas.width / canvas.height;
+            const spriteHeight = 5; // Desired visible height in 3D scene
+            const spriteWidth = spriteHeight * aspectRatio;
+            sprite.scale.set(spriteWidth, spriteHeight, 1);
+
+            return sprite;
+        }
+
+        // Function to update the displayed year and keywords
+        function updateYearAndKeywords() {
+            // Update the year on the central sphere's texture
+            yearContext.clearRect(0, 0, yearCanvas.width, yearCanvas.height);
+
+            // Draw year multiple times to cover the sphere
+            yearContext.font = "Bold 40px Roboto"; // Smaller font for tiling
+            yearContext.fillStyle = 'white';
+            const yearText = currentYear.toString();
+            const textMetrics = yearContext.measureText(yearText);
+            const textWidth = textMetrics.width;
+            const textHeight = 40; // Based on font size
+
+            // Calculate how many times the text can fit horizontally and vertically
+            // Adjusted spacing to increase number of repetitions (approx 3x more dense)
+            const horizontalRepeat = Math.ceil(yearCanvas.width / (textWidth + 20)); // Reduced spacing
+            const verticalRepeat = Math.ceil(yearCanvas.height / (textHeight + 20)); // Reduced spacing
+
+            for (let i = 0; i < horizontalRepeat; i++) {
+                for (let j = 0; j < verticalRepeat; j++) {
+                    const x = i * (textWidth + 20) + (yearCanvas.width % (textWidth + 20)) / 2; // Center horizontally
+                    const y = j * (textHeight + 20) + (yearCanvas.height % (textHeight + 20)) / 2 + textHeight / 2; // Center vertically
+                    yearContext.fillText(yearText, x, y);
+                }
+            }
+            yearTexture.needsUpdate = true; // Tell Three.js to re-render the texture
+
+            // Update sphere and node colors based on the current year
+            const theme = yearThemes.get(currentYear);
+            if (internetCore && internetCore.material) {
+                internetCore.material.color.set(theme.coreColor);
+                internetCore.material.emissive.set(theme.coreColor); // Keep emissive consistent
+            }
+            if (nodeMaterial) {
+                nodeMaterial.color.set(theme.nodeColor);
+            }
+
+
+            // Remove old keyword sprites
+            keywordSprites.forEach(sprite => scene.remove(sprite));
+            keywordSprites.length = 0; // Clear the array
+
+            // Add new keyword sprites for the current year
+            const keywords = yearKeywords.get(currentYear) || ["データなし", "新しい年を選択してください"]; // Default if no keywords for the year
+            keywords.forEach((keyword) => {
+                // Randomly select a color for the keyword
+                const randomColor = keywordColors[Math.floor(Math.random() * keywordColors.length)];
+                const sprite = createTextSprite(keyword, {
+                    fontsize: 80,
+                    textColor: randomColor
+                });
+
+                // Position keywords randomly around the core, but a bit further out
+                const phi = Math.random() * Math.PI * 2;
+                const theta = Math.random() * Math.PI;
+                const radius = 35 + Math.random() * 15; // Further out than nodes
+                sprite.position.set(
+                    radius * Math.sin(theta) * Math.cos(phi),
+                    radius * Math.sin(theta) * Math.sin(phi),
+                    radius * Math.cos(theta)
+                );
+                keywordSprites.push(sprite);
+                scene.add(sprite);
+            });
+        }
+
+        // Initialize Three.js scene
+        function init() {
+            const container = document.getElementById('webgl-container');
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x1a202c, 0.002); // Add fog for depth
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 50;
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft white light
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1).normalize();
+            scene.add(directionalLight);
+
+            // Create canvas for background color (solid light yellow)
+            const backgroundCanvas = document.createElement('canvas');
+            const backgroundContext = backgroundCanvas.getContext('2d');
+            backgroundCanvas.width = 1; // Smallest width for solid color
+            backgroundCanvas.height = 1; // Smallest height for solid color
+
+            backgroundContext.fillStyle = '#fefcbf'; // Light Yellow (tailwind yellow-100)
+            backgroundContext.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+
+            const backgroundTexture = new THREE.CanvasTexture(backgroundCanvas);
+            backgroundTexture.needsUpdate = true;
+
+            const backgroundSphereGeometry = new THREE.SphereGeometry(1000, 64, 64); // Very large sphere
+            const backgroundSphereMaterial = new THREE.MeshBasicMaterial({
+                map: backgroundTexture,
+                side: THREE.BackSide // Render inside the sphere
+            });
+            const backgroundSphere = new THREE.Mesh(backgroundSphereGeometry, backgroundSphereMaterial);
+            scene.add(backgroundSphere);
+
+
+            // Create canvas for year texture
+            yearCanvas = document.createElement('canvas');
+            yearContext = yearCanvas.getContext('2d');
+            yearCanvas.width = 1024; // Larger for tiling
+            yearCanvas.height = 512; // Larger for tiling
+            yearContext.textAlign = 'center';
+            yearContext.textBaseline = 'middle';
+
+            // Create year texture
+            yearTexture = new THREE.CanvasTexture(yearCanvas);
+
+            // Create a central "Internet Core"
+            const coreGeometry = new THREE.SphereGeometry(8, 32, 32);
+            // Initialize core material with a default color, will be updated by updateYearAndKeywords
+            const coreMaterial = new THREE.MeshPhongMaterial({
+                color: 0x63b3ed, // Default blue
+                emissive: 0x3182ce,
+                shininess: 100,
+                map: yearTexture // Apply the year texture here
+            });
+            internetCore = new THREE.Mesh(coreGeometry, coreMaterial);
+            scene.add(internetCore);
+
+            // Create "data packets" or "nodes" around the core
+            // Initialize node material globally
+            nodeMaterial = new THREE.MeshBasicMaterial({ color: 0x90cdf4 }); // Default blueish
+            const nodes = [];
+            for (let i = 0; i < 100; i++) {
+                const nodeGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+                const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+                const phi = Math.random() * Math.PI * 2;
+                const theta = Math.random() * Math.PI;
+                const radius = 20 + Math.random() * 10;
+                node.position.set(
+                    radius * Math.sin(theta) * Math.cos(phi),
+                    radius * Math.sin(theta) * Math.sin(phi),
+                    radius * Math.cos(theta)
+                );
+                nodes.push(node);
+                scene.add(node);
+            }
+
+            // Create "connection lines"
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x4299e1, transparent: true, opacity: 0.5 });
+            for (let i = 0; i < 50; i++) {
+                const startNode = nodes[Math.floor(Math.random() * nodes.length)];
+                const endNode = nodes[Math.floor(Math.random() * nodes.length)];
+                if (startNode && endNode) {
+                    const points = [startNode.position, endNode.position];
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.Line(geometry, lineMaterial);
+                    scene.add(line);
+                }
+            }
+
+            // Event Listeners for camera control
+            document.addEventListener('mousemove', onDocumentMouseMove);
+            document.addEventListener('wheel', onDocumentMouseWheel); // Add mouse wheel listener
+            document.addEventListener('resize', onWindowResize);
+
+            // Initial update of year and keywords
+            updateYearAndKeywords();
+
+            // Hide loading screen and show overlay after scene is ready
+            loadingScreen.style.opacity = '0';
+            loadingScreen.addEventListener('transitionend', () => {
+                loadingScreen.style.display = 'none';
+                overlay.style.opacity = '1';
+                overlay.style.pointerEvents = 'auto';
+            });
+        }
+
+        // Handle window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Handle mouse movement for camera rotation
+        function onDocumentMouseMove(event) {
+            mouseX = (event.clientX - windowHalfX);
+            mouseY = (event.clientY - windowHalfY);
+        }
+
+        // Handle mouse wheel for year change
+        function onDocumentMouseWheel(event) {
+            event.preventDefault(); // Prevent page scrolling
+
+            const oldYear = currentYear;
+            if (event.deltaY < 0) {
+                // Scroll up, go to previous year
+                currentYear = Math.max(minYear, currentYear - 1);
+            } else {
+                // Scroll down, go to next year
+                currentYear = Math.min(maxYear, currentYear + 1);
+            }
+
+            if (currentYear !== oldYear) {
+                updateYearAndKeywords(); // Update if year changed
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            targetX = mouseX * 0.001;
+            targetY = mouseY * 0.001;
+
+            camera.position.x += (targetX - camera.position.x) * 0.05;
+            camera.position.y += (-targetY - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            // Make the internetCore (sphere with year) always face the camera
+            if (internetCore) {
+                internetCore.lookAt(camera.position);
+            }
+
+            // Hide keyword sprites that are too close to the camera
+            const hideDistanceThreshold = 20; // Adjust this value as needed
+            keywordSprites.forEach(sprite => {
+                const distance = camera.position.distanceTo(sprite.position);
+                sprite.visible = distance > hideDistanceThreshold;
+            });
+
+            // Rotate the internet core
+            scene.rotation.y += 0.001;
+            scene.rotation.x += 0.0005;
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize and start everything
+        window.onload = async function () {
+            init();
+            animate();
+        };
+    </script>
+</body>
+</html>
