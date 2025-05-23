@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1990-2025 インターネットの変遷</title>
+    <title>1850-2025 インターネットの変遷</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&family=Noto+Sans+JP:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif; /* フォントをRobotoとNoto Sans JPに変更 */
             background-color: #1a202c; /* Dark background - will be overridden by 3D background */
             color: #e2e8f0; /* Light text */
         }
@@ -99,8 +99,8 @@
 
     <div id="overlay" class="opacity-0 pointer-events-none">
         <div class="info-panel">
-            <h1>1990-2025 インターネットの変遷</h1>
-            <p>ようこそ、インターネットの歴史を巡る旅へ！マウスホイールを回転して年号を進めたり戻したりし、各年に関係するキーワードを体験しましょう。マウスをドラッグして視点を動かせます。</p>
+            <h1>1850-2025 インターネットの変遷</h1>
+            <p>ようこそ、インターネットの歴史を巡る旅へ！マウスホイールを回転するか、スマートフォンで上下にスワイプして年号を進めたり戻したりし、各年に関係するキーワードを体験しましょう。マウスをドラッグして視点を動かせます。</p>
             <div id="facts-container" class="mt-6">
                 </div>
         </div>
@@ -118,12 +118,16 @@
         const windowHalfX = window.innerWidth / 2;
         const windowHalfY = window.innerHeight / 2;
 
+        // Touch event variables
+        let touchStartY = 0;
+        const swipeThreshold = 50; // Minimum vertical distance for a swipe to register
+
         const factsContainer = document.getElementById('facts-container');
         const overlay = document.getElementById('overlay');
         const loadingScreen = document.getElementById('loading-screen');
 
         let currentYear = 1998; // Initial year
-        const minYear = 1990;
+        const minYear = 1850; // Expanded minimum year
         const maxYear = 2025;
         let yearTexture; // To hold the texture for the current year on the sphere
         let yearCanvas; // Canvas used for year texture
@@ -143,6 +147,146 @@
 
         // Define color themes for different year ranges
         const yearThemes = new Map([
+            // 1850s - 1890s (Industrial Age, early communication)
+            [1850, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }], // SaddleBrown / Tan
+            [1851, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1852, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1853, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1854, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1855, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1856, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1857, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1858, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1859, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1860, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1861, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1862, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1863, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1864, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1865, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1866, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1867, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1868, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1869, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1870, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1871, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1872, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1873, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1874, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1875, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1876, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1877, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1878, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1879, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1880, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1881, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1882, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1883, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1884, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1885, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1886, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1887, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1888, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+            [1889, { coreColor: 0x8b4513, nodeColor: 0xd2b48c }],
+
+            // 1900s - 1930s (Early 20th Century, pre-WWII)
+            [1900, { coreColor: 0x708090, nodeColor: 0xb0c4de }], // SlateGray / LightSteelBlue
+            [1901, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1902, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1903, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1904, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1905, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1906, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1907, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1908, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1909, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1910, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1911, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1912, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1913, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1914, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1915, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1916, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1917, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1918, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1919, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1920, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1921, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1922, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1923, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1924, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1925, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1926, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1927, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1928, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1929, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1930, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1931, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1932, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1933, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1934, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1935, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1936, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1937, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1938, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+            [1939, { coreColor: 0x708090, nodeColor: 0xb0c4de }],
+
+            // 1940s - 1950s (Post-WWII, early Cold War, Space Age)
+            [1940, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }], // CadetBlue / LightBlue
+            [1941, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1942, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1943, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1944, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1945, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1946, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1947, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1948, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1949, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1950, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1951, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1952, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1953, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1954, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1955, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1956, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1957, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1958, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+            [1959, { coreColor: 0x5f9ea0, nodeColor: 0xadd8e6 }],
+
+            // 1960s - 1970s (Counter-culture, early computing)
+            [1960, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }], // MediumOrchid / Plum
+            [1961, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1962, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1963, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1964, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1965, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1966, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1967, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1968, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1969, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1970, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1971, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1972, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1973, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1974, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1975, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1976, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1977, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1978, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+            [1979, { coreColor: 0xba55d3, nodeColor: 0xdda0dd }],
+
+            // 1980s (Personal Computing, Pop Culture)
+            [1980, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }], // DarkTurquoise / Aquamarine
+            [1981, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1982, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1983, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1984, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1985, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1986, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1987, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1988, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+            [1989, { coreColor: 0x00ced1, nodeColor: 0x7fffd4 }],
+
             // 1990s (early internet, dial-up era)
             [1990, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }], // Blueish
             [1991, { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }],
@@ -189,106 +333,269 @@
         ]);
 
         // Keywords related to internet and digital for various years, including culture
-        const yearKeywords = new Map([
-            [1990, ["WorldWideWeb", "HTML", "FTP", "Usenet", "CERN", "UNIX", "MS-DOS", "Macintosh", "ファミコン", "スーパーファミコン", "バブル景気", "ジュリアナ東京", "トレンディドラマ", "携帯電話 (ショルダーホン)", "ポケットベル", "CD-ROM", "Windows 3.0", "DOS/V", "ネットワーク (LAN)", "電子掲示板", "パソコン通信", "ASCII", "BASIC", "8ビット", "16ビット", "ワープロ", "携帯型ゲーム機", "VHS", "カセットテープ", "J-POP"]],
-            [1991, ["WWW公開", "Gopher", "Linux", "MPEG", "WWWブラウザ", "ソニック・ザ・ヘッジホッグ", "Windows 3.1", "DOS/Vパソコン", "携帯電話普及開始", "PHS登場", "デジタルカメラ登場", "インターネット接続サービス", "ダイヤルアップ接続", "ISDN", "パソコン通信サービス拡大", "90年代ファッション", "グランジ", "Jリーグ開幕 (準備)", "バブル崩壊", "カラオケボックス", "湾岸戦争", "少年ジャンプ", "携帯ゲーム機", "CDシングル", "レンタルビデオ", "衛星放送", "J-POPヒット"]],
-            [1992, ["JPEG", "MPEG-1", "Internet Society (ISOC)", "WWWブラウザ (Lynx)", "Windows 3.1", "Macintosh System 7", "光ファイバー", "デジタル通信", "マルチメディア", "CD-ROMドライブ", "携帯電話 (小型化)", "ポケットベル進化", "Jリーグ開幕 (話題に)", "渋谷系", "小室ファミリー", "バブル崩壊本格化", "地球サミット", "プリクラ (登場前)", "ゲームボーイ", "セガサターン (話題に)", "プレイステーション (話題に)", "映画「ジュラシック・パーク」", "音楽CD", "レンタルCD", "衛星放送普及", "J-POP多様化"]],
-            [1993, ["Mosaic", "Webcam", "Internet Explorer (初期)", "GIF", "CERN WWWサーバ公開", "World Wide Web Consortium (W3C) 設立", "Windows NT", "Pentiumプロセッサ", "光ファイバー網整備", "ホームページ作成", "CGI", "電子商取引 (初期)", "Webサイト開設ブーム", "Jリーグ開幕", "渋谷系音楽", "アムラー", "コギャル", "たまごっち (登場前)", "携帯電話普及", "PHS", "デジタルカメラ", "音楽CD", "レンタルビデオ", "テレビゲーム", "衛星放送", "J-POPヒット"]],
-            [1994, ["Netscape Navigator", "Amazon.com", "Yahoo!", "W3C", "Webサーバー", "CGIスクリプト", "バナー広告", "Webデザイン", "HTML2.0", "Windows 95 (発表前)", "Pentiumプロセッサ普及", "インターネットプロバイダ", "ダイヤルアップ接続", "個人ホームページ", "Webコミュニティ", "携帯電話 (PHS普及)", "プリクラ登場", "ルーズソックス", "アムラー", "小室サウンド", "J-POPブーム", "オウム真理教事件", "阪神・淡路大震災 (話題に)", "ゲームソフト", "CDアルバム", "レンタルDVD (登場前)", "テレビゲーム", "J-POPヒット"]],
-            [1995, ["Windows 95", "Java", "JavaScript", "eBay", "RealPlayer", "Netscape Navigator 2.0", "Webブラウザ戦争", "インターネット接続サービス競争", "ISDN普及", "個人サイトブーム", "テレホーダイ", "電子メール普及", "チャットルーム", "Webリング", "HTML3.2", "Pentium Pro", "携帯電話 (PHS人気)", "プリクラ大流行", "ルーズソックス", "アムラー", "コギャル", "B'z", "Mr.Children", "阪神・淡路大震災", "オウム真理教事件", "ゲーム機 (PS, SS)", "CD-ROMゲーム", "レンタルビデオ", "J-POPヒット"]],
-            [1996, ["Hotmail", "CSS", "Flash", "ICQ", "Weblog (初期)", "Internet Explorer 3.0", "ActiveX", "Webホスティング", "CGIプログラム", "インターネットカフェ", "携帯電話 (PHS全盛)", "デジタルカメラ普及", "プリクラ進化", "渋谷系ファッション", "小室ファミリー絶頂期", "J-POP黄金期", "たまごっち (発表前)", "ポケモン (ゲームボーイ)", "プレイステーション人気", "セガサターン", "NINTENDO64", "CD-R", "MP3 (初期)", "レンタルDVD (初期)", "衛星デジタル放送", "携帯電話の普及", "J-POPヒット"]],
-            [1997, ["DVD", "Wi-Fi (初期)", "Netflix (DVDレンタル)", "Blogger (初期)", "MP3.com", "Internet Explorer 4.0", "DHTML", "Webフォント", "Webアニメーション", "インターネット広告", "携帯電話 (iモード発表前)", "デジタルカメラ (高画質化)", "たまごっち大流行", "ポケモン (アニメ)", "J-POP全盛期", "渋谷系ファッション", "援助交際 (社会問題化)", "Windows CE", "PDA", "ゲーム機 (PS, N64)", "CD-RW", "ADSL (初期)", "衛星デジタル放送普及", "レンタルDVD", "携帯電話の進化", "J-POPヒット"]],
-            [1998, ["Google", "PayPal", "MP3", "E-commerce", "Blog", "Windows 98", "ADSL (本格導入)", "DSL", "Webポータル", "オンラインショッピング", "インターネットバンキング", "携帯電話 (iモード登場)", "デジタルカメラ (メガピクセル)", "ブロードバンド (初期)", "Yahoo!オークション", "2ちゃんねる", "携帯電話普及率上昇", "プリクラ人気継続", "ルーズソックス", "アムラー", "J-POPヒット", "長野オリンピック", "映画「タイタニック」", "ゲーム (PS, N64)", "DVD普及開始", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [1999, ["Napster", "Wi-Fi Alliance", "BlackBerry (初期)", "Y2K問題", "ドットコムバブル", "ブロードバンド普及", "ADSLモデム", "DSLモデム", "オンラインゲーム (初期)", "iモード", "携帯電話 (インターネット接続)", "デジタルカメラ (高画質化)", "携帯電話普及率急増", "2ちゃんねる人気", "フラッシュアニメ", "ブログブーム", "渋谷系ファッション", "J-POP黄金期", "宇多田ヒカル", "浜崎あゆみ", "映画「マトリックス」", "ゲーム (PS2発表)", "DVDレコーダー (初期)", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2000, ["Dot-com Bubble崩壊", "Broadband", "ADSL", "Bluetooth", "USB", "Windows 2000", "Windows Me", "PlayStation 2", "光ファイバー (FTTH初期)", "常時接続", "オンラインゲーム普及", "携帯電話 (カメラ付き)", "デジタルカメラ (コンパクト化)", "ブロードバンド普及率上昇", "携帯電話インターネット接続", "2ちゃんねる全盛期", "Flashコンテンツ", "ブログ文化", "J-POP多様化", "韓流ブーム (初期)", "映画「千と千尋の神隠し」 (話題に)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "携帯電話の多機能化", "J-POPヒット"]],
-            [2001, ["Wikipedia", "iPod", "BitTorrent", "Windows XP", "iTunes", "ブロードバンド (普及加速)", "FTTH (初期)", "P2Pファイル共有", "オンラインゲーム (MMORPG)", "携帯電話 (カラー液晶)", "デジタルカメラ (高画質化)", "携帯電話 (着メロ)", "2ちゃんねる文化", "ブログ人気", "J-POP成熟期", "韓流ドラマ", "映画「ハリー・ポッター」", "ゲームキューブ", "Xbox", "DVDレコーダー普及", "レンタルDVD", "衛星デジタル放送", "携帯電話の多機能化", "J-POPヒット"]],
-            [2002, ["Friendster", "Firefox (初期)", "iTunes Music Store (初期)", "Bluetooth 1.1", "ブロードバンド普及率急増", "FTTH (本格導入)", "P2Pソフトウェア", "オンラインゲーム (人気)", "携帯電話 (写メール)", "デジタルカメラ (高機能化)", "携帯電話 (着うた)", "2ちゃんねる (社会現象)", "ブログ (個人メディア)", "J-POP多様化", "韓流ブーム", "映画「ロード・オブ・ザ・リング」", "ゲーム (PS2, GC, Xbox)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2003, ["Skype", "MySpace", "Safari", "WordPress", "VoIP", "ブロードバンド (家庭普及)", "FTTH (普及加速)", "P2P (規制強化)", "オンラインゲーム (eスポーツ初期)", "携帯電話 (ワンセグ初期)", "デジタルカメラ (一眼レフデジタル)", "携帯電話 (QRコード)", "2ちゃんねる (影響力増大)", "ブログ (アフィリエイト)", "J-POPアイドル", "韓流ドラマ人気", "映画「パイレーツ・オブ・カリビアン」", "PSP (発表)", "DS (発表)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2004, ["Facebook", "Gmail", "Flickr", "Podcast", "Web 2.0", "ブロードバンド (高速化)", "FTTH (主流化)", "P2P (違法ダウンロード)", "オンラインゲーム (課金モデル)", "携帯電話 (おサイフケータイ)", "デジタルカメラ (ミラーレス初期)", "携帯電話 (絵文字)", "mixi", "ブログ (SNS連携)", "J-POPロック", "韓流ブーム継続", "映画「スパイダーマン2」", "ニンテンドーDS", "PlayStation Portable (PSP)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2005, ["YouTube", "Google Maps", "Reddit", "Xbox 360", "Cloud Computing (初期)", "Web 2.0 (ブーム)", "ブロードバンド (高速化)", "FTTH (普及)", "P2P (合法化模索)", "オンラインゲーム (ソーシャルゲーム初期)", "携帯電話 (フルブラウザ)", "デジタルカメラ (高画質化)", "携帯電話 (ブログ連携)", "mixi全盛期", "ブログ (プロブロガー)", "J-POP多様化", "韓流ブーム定着", "映画「スター・ウォーズ エピソード3」", "Xbox 360", "PlayStation 3 (発表)", "Wii (発表)", "DVDレコーダー", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2006, ["Twitter", "Nintendo Wii", "Kindle (初期)", "OpenStreetMap", "WebM (初期)", "Web 2.0 (浸透)", "ブロードバンド (安定化)", "FTTH (普及率上昇)", "P2P (ストリーミング)", "オンラインゲーム (MMORPG人気)", "携帯電話 (GPS)", "デジタルカメラ (一眼レフデジタル普及)", "携帯電話 (動画撮影)", "mixi (ピーク)", "ブログ (ビジネス活用)", "J-POP多様化", "韓流ブーム拡大", "映画「デスノート」", "Wii", "PlayStation 3", "DVDレコーダー", "Blu-ray (初期)", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2007, ["iPhone", "Android (発表)", "Netflix Streaming", "Hulu (初期)", "App Store (発表)", "Web 2.0 (成熟)", "ブロードバンド (高速化)", "FTTH (普及率加速)", "ストリーミングサービス", "オンラインゲーム (スマホゲーム初期)", "スマートフォン (iPhone登場)", "デジタルカメラ (ミラーレス一眼)", "携帯電話 (タッチパネル)", "mixi (SNS競争)", "ブログ (モバイル対応)", "J-POPアイドルグループ", "韓流ブーム継続", "映画「トランスフォーマー」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2008, ["Google Chrome", "Spotify (初期)", "Airbnb (初期)", "Dropbox (初期)", "4G (初期)", "Web 2.0 (進化)", "ブロードバンド (高速化)", "FTTH (普及率上昇)", "クラウドサービス", "オンラインゲーム (ソーシャルゲーム)", "スマートフォン (Android登場)", "デジタルカメラ (高画質化)", "携帯電話 (アプリストア)", "mixi (競争激化)", "ブログ (SNS連携)", "J-POP多様化", "韓流ブーム継続", "映画「ダークナイト」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2009, ["WhatsApp", "Bitcoin (初期)", "Bing", "HTML5 (標準化)", "Cloud Gaming (初期)", "Web 2.0 (定着)", "ブロードバンド (高速化)", "FTTH (普及率拡大)", "クラウドコンピューティング", "オンラインゲーム (スマホゲーム人気)", "スマートフォン (アプリエコシステム)", "デジタルカメラ (高機能化)", "携帯電話 (SNS連携)", "Twitter (人気)", "Facebook (人気)", "ブログ (動画活用)", "J-POPアイドル", "韓流ブーム継続", "映画「アバター」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2010, ["iPad", "Instagram", "Pinterest", "Siri (初期)", "Mobile Internet", "ソーシャルメディア", "スマートフォン普及", "タブレット端末", "クラウドサービス", "オンラインゲーム (ソーシャルゲーム全盛)", "携帯電話 (テザリング)", "デジタルカメラ (ミラーレス一眼人気)", "携帯電話 (LINE登場)", "Twitter (浸透)", "Facebook (浸透)", "ブログ (インフルエンサー)", "J-POP K-POP", "韓流ブーム再燃", "映画「インセプション」", "iPad", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2011, ["Google+", "Snapchat (初期)", "Twitch (初期)", "Google Wallet (初期)", "NFC (初期)", "ソーシャルメディア (多様化)", "スマートフォン (高性能化)", "タブレット端末 (普及)", "クラウドストレージ", "オンラインゲーム (eスポーツ拡大)", "携帯電話 (決済サービス)", "デジタルカメラ (Wi-Fi搭載)", "携帯電話 (ARアプリ)", "LINE (普及)", "Twitter", "Facebook", "ブログ (動画配信)", "J-POP K-POP", "韓流ブーム継続", "映画「アベンジャーズ」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2012, ["Raspberry Pi", "Oculus VR (初期)", "Windows 8", "IPv6", "Big Data", "ソーシャルメディア (動画)", "スマートフォン (大画面化)", "タブレット端末 (競争激化)", "クラウドインフラ", "オンラインゲーム (スマホゲーム多様化)", "携帯電話 (NFC決済)", "デジタルカメラ (高画質化)", "携帯電話 (クラウド連携)", "LINE (全盛期)", "Twitter", "Facebook", "ブログ (キュレーション)", "J-POP K-POP", "韓流ブーム継続", "映画「レ・ミゼラブル」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2013, ["Chromecast", "Vine", "Telegram (初期)", "Smartwatch (初期)", "IoT (初期)", "ソーシャルメディア (ライブ配信)", "スマートフォン (高性能化)", "タブレット端末 (多様化)", "クラウドセキュリティ", "オンラインゲーム (eスポーツプロ化)", "携帯電話 (ウェアラブル連携)", "デジタルカメラ (4K動画)", "携帯電話 (生体認証)", "LINE (ビジネス活用)", "Twitter", "Facebook", "ブログ (コンテンツマーケティング)", "J-POP K-POP", "韓流ブーム継続", "映画「アナと雪の女王」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2014, ["Apple Watch (発表)", "Alexa (初期)", "Periscope (初期)", "Docker", "Machine Learning (初期)", "ソーシャルメディア (動画広告)", "スマートフォン (ファブレット)", "タブレット端末 (ビジネス活用)", "クラウドネイティブ", "オンラインゲーム (モバイルゲーム市場拡大)", "携帯電話 (スマートホーム連携)", "デジタルカメラ (高感度)", "携帯電話 (顔認証)", "LINE (スタンプ経済圏)", "Twitter", "Facebook", "ブログ (SEO対策)", "J-POP K-POP", "韓流ブーム継続", "映画「ベイマックス」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2015, ["Apple Music", "Windows 10", "USB-C", "AI Assistant (初期)", "VR Headsets (初期)", "ソーシャルメディア (インフルエンサーマーケティング)", "スマートフォン (デュアルカメラ)", "タブレット端末 (教育分野)", "クラウドファンディング", "オンラインゲーム (eスポーツ観戦)", "携帯電話 (AR/VR対応)", "デジタルカメラ (高機能化)", "携帯電話 (AIアシスタント)", "LINE (決済サービス)", "Twitter", "Facebook", "ブログ (パーソナルブランディング)", "J-POP K-POP", "韓流ブーム継続", "映画「スター・ウォーズ フォースの覚醒」", "Apple Watch", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2016, ["Pokémon GO", "TikTok (初期)", "Google Home (初期)", "Nintendo Switch (発表)", "Deep Learning (普及)", "ソーシャルメディア (ライブコマース)", "スマートフォン (AIチップ)", "タブレット端末 (クリエイティブ)", "クラウドセキュリティ", "オンラインゲーム (VRゲーム)", "携帯電話 (AIカメラ)", "デジタルカメラ (動画強化)", "携帯電話 (生体認証)", "LINE (AI活用)", "Twitter", "Facebook", "ブログ (動画コンテンツ)", "J-POP K-POP", "韓流ブーム継続", "映画「君の名は。」", "Pokémon GO", "Nintendo Switch", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2017, ["Fortnite", "Face ID", "Cryptocurrency (ブーム)", "Blockchain (初期)", "ソーシャルメディア (ショート動画)", "スマートフォン (ベゼルレス)", "タブレット端末 (ペン対応)", "クラウドネイティブ", "オンラインゲーム (eスポーツ人気)", "携帯電話 (ARKit)", "デジタルカメラ (高画質化)", "携帯電話 (AI翻訳)", "LINE (AIアシスタント)", "Twitter", "Facebook", "ブログ (音声コンテンツ)", "J-POP K-POP", "韓流ブーム継続", "映画「美女と野獣」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2018, ["GDPR", "5G NR (初期)", "AI Ethics", "Smart Speakers", "Autonomous Driving (初期)", "ソーシャルメディア (フェイクニュース)", "スマートフォン (折りたたみスマホ発表)", "タブレット端末 (業務利用)", "クラウド移行", "オンラインゲーム (バトルロイヤルゲーム)", "携帯電話 (AIアシスタント)", "デジタルカメラ (動画機能強化)", "携帯電話 (eSIM)", "LINE (ニュース配信)", "Twitter", "Facebook", "ブログ (ポッドキャスト)", "J-POP K-POP", "韓流ブーム継続", "映画「ボヘミアン・ラプソディ」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2019, ["Disney+", "Apple Arcade", "Foldable Phones", "Edge Computing (初期)", "Quantum Supremacy (発表)", "ソーシャルメディア (インフルエンサー経済)", "スマートフォン (5G対応)", "タブレット端末 (クリエイティブ)", "クラウドセキュリティ", "オンラインゲーム (クラウドゲーミング)", "携帯電話 (折りたたみスマホ)", "デジタルカメラ (高機能化)", "携帯電話 (生体認証)", "LINE (金融サービス)", "Twitter", "Facebook", "ブログ (Vlog)", "J-POP K-POP", "韓流ブーム継続", "映画「天気の子」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2020, ["Remote Work", "Zoom", "COVID-19 Impact", "E-learning", "Telemedicine", "ソーシャルメディア (ライブ配信)", "スマートフォン (5G普及)", "タブレット端末 (リモートワーク)", "クラウドネイティブ", "オンラインゲーム (自宅ゲーム)", "携帯電話 (非接触決済)", "デジタルカメラ (Webカメラ化)", "携帯電話 (接触確認アプリ)", "LINE (コロナ情報)", "Twitter", "Facebook", "ブログ (オンラインイベント)", "J-POP K-POP", "韓流ブーム継続", "映画「劇場版 鬼滅の刃 無限列車編」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2021, ["Metaverse Concept", "NFTs", "Web3 (初期)", "Supply Chain Issues", "Cyberattacks", "ソーシャルメディア (VR/AR)", "スマートフォン (AI強化)", "タブレット端末 (AR/VR)", "クラウドセキュリティ", "オンラインゲーム (メタバースゲーム)", "携帯電話 (NFT対応)", "デジタルカメラ (AI編集)", "携帯電話 (デジタルID)", "LINE (NFT)", "Twitter", "Facebook", "ブログ (メタバース)", "J-POP K-POP", "韓流ブーム継続", "映画「シン・エヴァンゲリオン劇場版」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2022, ["ChatGPT", "Stable Diffusion", "AI Art", "Generative AI", "Gig Economy", "ソーシャルメディア (AI生成コンテンツ)", "スマートフォン (AI機能強化)", "タブレット端末 (AIアシスタント)", "クラウドネイティブ", "オンラインゲーム (AIキャラクター)", "携帯電話 (生成AI)", "デジタルカメラ (AI撮影)", "携帯電話 (デジタル通貨)", "LINE (AIチャット)", "Twitter", "Facebook", "ブログ (AIライティング)", "J-POP K-POP", "韓流ブーム継続", "映画「トップガン マーヴェリック」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2023, ["Large Language Models (LLM)", "AI Integration", "Spatial Computing", "Sustainable Tech", "Cyber Resilience", "ソーシャルメディア (AI推薦)", "スマートフォン (AIカメラ)", "タブレット端末 (AI学習)", "クラウドセキュリティ", "オンラインゲーム (AIアシスト)", "携帯電話 (LLM搭載)", "デジタルカメラ (AI高画質化)", "携帯電話 (Web3ウォレット)", "LINE (AI翻訳)", "Twitter", "Facebook", "ブログ (AIコンテンツ)", "J-POP K-POP", "韓流ブーム継続", "映画「ザ・スーパーマリオブラザーズ・ムービー」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2024, ["AI Agents", "Personalized AI", "Quantum Networking (初期)", "Digital Twins", "Green Computing", "ソーシャルメディア (AIパーソナライゼーション)", "スマートフォン (次世代AI)", "タブレット端末 (XR対応)", "クラウドネイティブ", "オンラインゲーム (AI生成ワールド)", "携帯電話 (AIエージェント)", "デジタルカメラ (AI動画編集)", "携帯電話 (デジタルヘルス)", "LINE (AIパーソナル)", "Twitter", "Facebook", "ブログ (AIツール活用)", "J-POP K-POP", "韓流ブーム継続", "映画「Dune: Part Two」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]],
-            [2025, ["Metaverse (本格化)", "Web3 (普及)", "AI Everywhere", "Quantum Computing (実用化)", "Sustainable Tech", "Human-AI Collaboration", "ソーシャルメディア (没入型体験)", "スマートフォン (AIデバイス)", "タブレット端末 (空間コンピューティング)", "クラウドセキュリティ", "オンラインゲーム (メタバース経済)", "携帯電話 (AIアシスタント)", "デジタルカメラ (AIクリエイティブ)", "携帯電話 (デジタルツイン)", "LINE (メタバース)", "Twitter", "Facebook", "ブログ (AIビジネス)", "J-POP K-POP", "韓流ブーム継続", "映画「アバター3」", "iPhone", "Android", "Blu-ray", "レンタルDVD", "衛星デジタル放送", "J-POPヒット"]]
-        ]);
+        const yearKeywords = new Map();
+        // const allUsedWords = new Set(); // Not needed for dummy data
+
+        // Function to add keywords for a specific year, ensuring uniqueness
+        function addKeywordsForYear(year, keywordsToAdd) {
+            yearKeywords.set(year, keywordsToAdd);
+        }
+
+        // Function to populate yearKeywords with dummy terms
+        // This simulates loading from an external JSON file
+        async function populateYearKeywords() {
+            // Simulate fetching a JSON file
+            const dummyJsonData = `
+                {
+                    "1850": ["dummy_1850_A", "dummy_1850_B", "dummy_1850_C"],
+                    "1851": ["dummy_1851_A", "dummy_1851_B", "dummy_1851_C"],
+                    "1852": ["dummy_1852_A", "dummy_1852_B", "dummy_1852_C"],
+                    "1853": ["dummy_1853_A", "dummy_1853_B", "dummy_1853_C"],
+                    "1854": ["dummy_1854_A", "dummy_1854_B", "dummy_1854_C"],
+                    "1855": ["dummy_1855_A", "dummy_1855_B", "dummy_1855_C"],
+                    "1856": ["dummy_1856_A", "dummy_1856_B", "dummy_1856_C"],
+                    "1857": ["dummy_1857_A", "dummy_1857_B", "dummy_1857_C"],
+                    "1858": ["dummy_1858_A", "dummy_1858_B", "dummy_1858_C"],
+                    "1859": ["dummy_1859_A", "dummy_1859_B", "dummy_1859_C"],
+                    "1860": ["dummy_1860_A", "dummy_1860_B", "dummy_1860_C"],
+                    "1861": ["dummy_1861_A", "dummy_1861_B", "dummy_1861_C"],
+                    "1862": ["dummy_1862_A", "dummy_1862_B", "dummy_1862_C"],
+                    "1863": ["dummy_1863_A", "dummy_1863_B", "dummy_1863_C"],
+                    "1864": ["dummy_1864_A", "dummy_1864_B", "dummy_1864_C"],
+                    "1865": ["dummy_1865_A", "dummy_1865_B", "dummy_1865_C"],
+                    "1866": ["dummy_1866_A", "dummy_1866_B", "dummy_1866_C"],
+                    "1867": ["dummy_1867_A", "dummy_1867_B", "dummy_1867_C"],
+                    "1868": ["dummy_1868_A", "dummy_1868_B", "dummy_1868_C"],
+                    "1869": ["dummy_1869_A", "dummy_1869_B", "dummy_1869_C"],
+                    "1870": ["dummy_1870_A", "dummy_1870_B", "dummy_1870_C"],
+                    "1871": ["dummy_1871_A", "dummy_1871_B", "dummy_1871_C"],
+                    "1872": ["dummy_1872_A", "dummy_1872_B", "dummy_1872_C"],
+                    "1873": ["dummy_1873_A", "dummy_1873_B", "dummy_1873_C"],
+                    "1874": ["dummy_1874_A", "dummy_1874_B", "dummy_1874_C"],
+                    "1875": ["dummy_1875_A", "dummy_1875_B", "dummy_1875_C"],
+                    "1876": ["dummy_1876_A", "dummy_1876_B", "dummy_1876_C"],
+                    "1877": ["dummy_1877_A", "dummy_1877_B", "dummy_1877_C"],
+                    "1878": ["dummy_1878_A", "dummy_1878_B", "dummy_1878_C"],
+                    "1879": ["dummy_1879_A", "dummy_1879_B", "dummy_1879_C"],
+                    "1880": ["dummy_1880_A", "dummy_1880_B", "dummy_1880_C"],
+                    "1881": ["dummy_1881_A", "dummy_1881_B", "dummy_1881_C"],
+                    "1882": ["dummy_1882_A", "dummy_1882_B", "dummy_1882_C"],
+                    "1883": ["dummy_1883_A", "dummy_1883_B", "dummy_1883_C"],
+                    "1884": ["dummy_1884_A", "dummy_1884_B", "dummy_1884_C"],
+                    "1885": ["dummy_1885_A", "dummy_1885_B", "dummy_1885_C"],
+                    "1886": ["dummy_1886_A", "dummy_1886_B", "dummy_1886_C"],
+                    "1887": ["dummy_1887_A", "dummy_1887_B", "dummy_1887_C"],
+                    "1888": ["dummy_1888_A", "dummy_1888_B", "dummy_1888_C"],
+                    "1889": ["dummy_1889_A", "dummy_1889_B", "dummy_1889_C"],
+                    "1890": ["dummy_1890_A", "dummy_1890_B", "dummy_1890_C"],
+                    "1891": ["dummy_1891_A", "dummy_1891_B", "dummy_1891_C"],
+                    "1892": ["dummy_1892_A", "dummy_1892_B", "dummy_1892_C"],
+                    "1893": ["dummy_1893_A", "dummy_1893_B", "dummy_1893_C"],
+                    "1894": ["dummy_1894_A", "dummy_1894_B", "dummy_1894_C"],
+                    "1895": ["dummy_1895_A", "dummy_1895_B", "dummy_1895_C"],
+                    "1896": ["dummy_1896_A", "dummy_1896_B", "dummy_1896_C"],
+                    "1897": ["dummy_1897_A", "dummy_1897_B", "dummy_1897_C"],
+                    "1898": ["dummy_1898_A", "dummy_1898_B", "dummy_1898_C"],
+                    "1899": ["dummy_1899_A", "dummy_1899_B", "dummy_1899_C"],
+                    "1900": ["dummy_1900_A", "dummy_1900_B", "dummy_1900_C"],
+                    "1901": ["dummy_1901_A", "dummy_1901_B", "dummy_1901_C"],
+                    "1902": ["dummy_1902_A", "dummy_1902_B", "dummy_1902_C"],
+                    "1903": ["dummy_1903_A", "dummy_1903_B", "dummy_1903_C"],
+                    "1904": ["dummy_1904_A", "dummy_1904_B", "dummy_1904_C"],
+                    "1905": ["dummy_1905_A", "dummy_1905_B", "dummy_1905_C"],
+                    "1906": ["dummy_1906_A", "dummy_1906_B", "dummy_1906_C"],
+                    "1907": ["dummy_1907_A", "dummy_1907_B", "dummy_1907_C"],
+                    "1908": ["dummy_1908_A", "dummy_1908_B", "dummy_1908_C"],
+                    "1909": ["dummy_1909_A", "dummy_1909_B", "dummy_1909_C"],
+                    "1910": ["dummy_1910_A", "dummy_1910_B", "dummy_1910_C"],
+                    "1911": ["dummy_1911_A", "dummy_1911_B", "dummy_1911_C"],
+                    "1912": ["dummy_1912_A", "dummy_1912_B", "dummy_1912_C"],
+                    "1913": ["dummy_1913_A", "dummy_1913_B", "dummy_1913_C"],
+                    "1914": ["dummy_1914_A", "dummy_1914_B", "dummy_1914_C"],
+                    "1915": ["dummy_1915_A", "dummy_1915_B", "dummy_1915_C"],
+                    "1916": ["dummy_1916_A", "dummy_1916_B", "dummy_1916_C"],
+                    "1917": ["dummy_1917_A", "dummy_1917_B", "dummy_1917_C"],
+                    "1918": ["dummy_1918_A", "dummy_1918_B", "dummy_1918_C"],
+                    "1919": ["dummy_1919_A", "dummy_1919_B", "dummy_1919_C"],
+                    "1920": ["dummy_1920_A", "dummy_1920_B", "dummy_1920_C"],
+                    "1921": ["dummy_1921_A", "dummy_1921_B", "dummy_1921_C"],
+                    "1922": ["dummy_1922_A", "dummy_1922_B", "dummy_1922_C"],
+                    "1923": ["dummy_1923_A", "dummy_1923_B", "dummy_1923_C"],
+                    "1924": ["dummy_1924_A", "dummy_1924_B", "dummy_1924_C"],
+                    "1925": ["dummy_1925_A", "dummy_1925_B", "dummy_1925_C"],
+                    "1926": ["dummy_1926_A", "dummy_1926_B", "dummy_1926_C"],
+                    "1927": ["dummy_1927_A", "dummy_1927_B", "dummy_1927_C"],
+                    "1928": ["dummy_1928_A", "dummy_1928_B", "dummy_1928_C"],
+                    "1929": ["dummy_1929_A", "dummy_1929_B", "dummy_1929_C"],
+                    "1930": ["dummy_1930_A", "dummy_1930_B", "dummy_1930_C"],
+                    "1931": ["dummy_1931_A", "dummy_1931_B", "dummy_1931_C"],
+                    "1932": ["dummy_1932_A", "dummy_1932_B", "dummy_1932_C"],
+                    "1933": ["dummy_1933_A", "dummy_1933_B", "dummy_1933_C"],
+                    "1934": ["dummy_1934_A", "dummy_1934_B", "dummy_1934_C"],
+                    "1935": ["dummy_1935_A", "dummy_1935_B", "dummy_1935_C"],
+                    "1936": ["dummy_1936_A", "dummy_1936_B", "dummy_1936_C"],
+                    "1937": ["dummy_1937_A", "dummy_1937_B", "dummy_1937_C"],
+                    "1938": ["dummy_1938_A", "dummy_1938_B", "dummy_1938_C"],
+                    "1939": ["dummy_1939_A", "dummy_1939_B", "dummy_1939_C"],
+                    "1940": ["dummy_1940_A", "dummy_1940_B", "dummy_1940_C"],
+                    "1941": ["dummy_1941_A", "dummy_1941_B", "dummy_1941_C"],
+                    "1942": ["dummy_1942_A", "dummy_1942_B", "dummy_1942_C"],
+                    "1943": ["dummy_1943_A", "dummy_1943_B", "dummy_1943_C"],
+                    "1944": ["dummy_1944_A", "dummy_1944_B", "dummy_1944_C"],
+                    "1945": ["dummy_1945_A", "dummy_1945_B", "dummy_1945_C"],
+                    "1946": ["dummy_1946_A", "dummy_1946_B", "dummy_1946_C"],
+                    "1947": ["dummy_1947_A", "dummy_1947_B", "dummy_1947_C"],
+                    "1948": ["dummy_1948_A", "dummy_1948_B", "dummy_1948_C"],
+                    "1949": ["dummy_1949_A", "dummy_1949_B", "dummy_1949_C"],
+                    "1950": ["dummy_1950_A", "dummy_1950_B", "dummy_1950_C"],
+                    "1951": ["dummy_1951_A", "dummy_1951_B", "dummy_1951_C"],
+                    "1952": ["dummy_1952_A", "dummy_1952_B", "dummy_1952_C"],
+                    "1953": ["dummy_1953_A", "dummy_1953_B", "dummy_1953_C"],
+                    "1954": ["dummy_1954_A", "dummy_1954_B", "dummy_1954_C"],
+                    "1955": ["dummy_1955_A", "dummy_1955_B", "dummy_1955_C"],
+                    "1956": ["dummy_1956_A", "dummy_1956_B", "dummy_1956_C"],
+                    "1957": ["dummy_1957_A", "dummy_1957_B", "dummy_1957_C"],
+                    "1958": ["dummy_1958_A", "dummy_1958_B", "dummy_1958_C"],
+                    "1959": ["dummy_1959_A", "dummy_1959_B", "dummy_1959_C"],
+                    "1960": ["dummy_1960_A", "dummy_1960_B", "dummy_1960_C"],
+                    "1961": ["dummy_1961_A", "dummy_1961_B", "dummy_1961_C"],
+                    "1962": ["dummy_1962_A", "dummy_1962_B", "dummy_1962_C"],
+                    "1963": ["dummy_1963_A", "dummy_1963_B", "dummy_1963_C"],
+                    "1964": ["dummy_1964_A", "dummy_1964_B", "dummy_1964_C"],
+                    "1965": ["dummy_1965_A", "dummy_1965_B", "dummy_1965_C"],
+                    "1966": ["dummy_1966_A", "dummy_1966_B", "dummy_1966_C"],
+                    "1967": ["dummy_1967_A", "dummy_1967_B", "dummy_1967_C"],
+                    "1968": ["dummy_1968_A", "dummy_1968_B", "dummy_1968_C"],
+                    "1969": ["dummy_1969_A", "dummy_1969_B", "dummy_1969_C"],
+                    "1970": ["dummy_1970_A", "dummy_1970_B", "dummy_1970_C"],
+                    "1971": ["dummy_1971_A", "dummy_1971_B", "dummy_1971_C"],
+                    "1972": ["dummy_1972_A", "dummy_1972_B", "dummy_1972_C"],
+                    "1973": ["dummy_1973_A", "dummy_1973_B", "dummy_1973_C"],
+                    "1974": ["dummy_1974_A", "dummy_1974_B", "dummy_1974_C"],
+                    "1975": ["dummy_1975_A", "dummy_1975_B", "dummy_1975_C"],
+                    "1976": ["dummy_1976_A", "dummy_1976_B", "dummy_1976_C"],
+                    "1977": ["dummy_1977_A", "dummy_1977_B", "dummy_1977_C"],
+                    "1978": ["dummy_1978_A", "dummy_1978_B", "dummy_1978_C"],
+                    "1979": ["dummy_1979_A", "dummy_1979_B", "dummy_1979_C"],
+                    "1980": ["dummy_1980_A", "dummy_1980_B", "dummy_1980_C"],
+                    "1981": ["dummy_1981_A", "dummy_1981_B", "dummy_1981_C"],
+                    "1982": ["dummy_1982_A", "dummy_1982_B", "dummy_1982_C"],
+                    "1983": ["dummy_1983_A", "dummy_1983_B", "dummy_1983_C"],
+                    "1984": ["dummy_1984_A", "dummy_1984_B", "dummy_1984_C"],
+                    "1985": ["dummy_1985_A", "dummy_1985_B", "dummy_1985_C"],
+                    "1986": ["dummy_1986_A", "dummy_1986_B", "dummy_1986_C"],
+                    "1987": ["dummy_1987_A", "dummy_1987_B", "dummy_1987_C"],
+                    "1988": ["dummy_1988_A", "dummy_1988_B", "dummy_1988_C"],
+                    "1989": ["dummy_1989_A", "dummy_1989_B", "dummy_1989_C"],
+                    "1990": ["dummy_1990_A", "dummy_1990_B", "dummy_1990_C"],
+                    "1991": ["dummy_1991_A", "dummy_1991_B", "dummy_1991_C"],
+                    "1992": ["dummy_1992_A", "dummy_1992_B", "dummy_1992_C"],
+                    "1993": ["dummy_1993_A", "dummy_1993_B", "dummy_1993_C"],
+                    "1994": ["dummy_1994_A", "dummy_1994_B", "dummy_1994_C"],
+                    "1995": ["dummy_1995_A", "dummy_1995_B", "dummy_1995_C"],
+                    "1996": ["dummy_1996_A", "dummy_1996_B", "dummy_1996_C"],
+                    "1997": ["dummy_1997_A", "dummy_1997_B", "dummy_1997_C"],
+                    "1998": ["dummy_1998_A", "dummy_1998_B", "dummy_1998_C"],
+                    "1999": ["dummy_1999_A", "dummy_1999_B", "dummy_1999_C"],
+                    "2000": ["dummy_2000_A", "dummy_2000_B", "dummy_2000_C"],
+                    "2001": ["dummy_2001_A", "dummy_2001_B", "dummy_2001_C"],
+                    "2002": ["dummy_2002_A", "dummy_2002_B", "dummy_2002_C"],
+                    "2003": ["dummy_2003_A", "dummy_2003_B", "dummy_2003_C"],
+                    "2004": ["dummy_2004_A", "dummy_2004_B", "dummy_2004_C"],
+                    "2005": ["dummy_2005_A", "dummy_2005_B", "dummy_2005_C"],
+                    "2006": ["dummy_2006_A", "dummy_2006_B", "dummy_2006_C"],
+                    "2007": ["dummy_2007_A", "dummy_2007_B", "dummy_2007_C"],
+                    "2008": ["dummy_2008_A", "dummy_2008_B", "dummy_2008_C"],
+                    "2009": ["dummy_2009_A", "dummy_2009_B", "dummy_2009_C"],
+                    "2010": ["dummy_2010_A", "dummy_2010_B", "dummy_2010_C"],
+                    "2011": ["dummy_2011_A", "dummy_2011_B", "dummy_2011_C"],
+                    "2012": ["dummy_2012_A", "dummy_2012_B", "dummy_2012_C"],
+                    "2013": ["dummy_2013_A", "dummy_2013_B", "dummy_2013_C"],
+                    "2014": ["dummy_2014_A", "dummy_2014_B", "dummy_2014_C"],
+                    "2015": ["dummy_2015_A", "dummy_2015_B", "dummy_2015_C"],
+                    "2016": ["dummy_2016_A", "dummy_2016_B", "dummy_2016_C"],
+                    "2017": ["dummy_2017_A", "dummy_2017_B", "dummy_2017_C"],
+                    "2018": ["dummy_2018_A", "dummy_2018_B", "dummy_2018_C"],
+                    "2019": ["dummy_2019_A", "dummy_2019_B", "dummy_2019_C"],
+                    "2020": ["dummy_2020_A", "dummy_2020_B", "dummy_2020_C"],
+                    "2021": ["dummy_2021_A", "dummy_2021_B", "dummy_2021_C"],
+                    "2022": ["dummy_2022_A", "dummy_2022_B", "dummy_2022_C"],
+                    "2023": ["dummy_2023_A", "dummy_2023_B", "dummy_2023_C"],
+                    "2024": ["dummy_2024_A", "dummy_2024_B", "dummy_2024_C"],
+                    "2025": ["dummy_2025_A", "dummy_2025_B", "dummy_2025_C"]
+                }
+            `;
+            // Simulate a fetch call
+            return new Promise(resolve => {
+                setTimeout(() => { // Simulate network delay
+                    const parsedData = JSON.parse(dummyJsonData);
+                    for (const year in parsedData) {
+                        if (parsedData.hasOwnProperty(year)) {
+                            addKeywordsForYear(parseInt(year), parsedData[year]);
+                        }
+                    }
+                    resolve();
+                }, 500); // 0.5 second delay
+            });
+        }
 
         /**
-         * Creates a 3D sprite with text rendered on a 2D canvas.
+         * Creates a 3D text mesh with text rendered on a 2D canvas as a texture.
+         * This allows for proper Japanese character rendering.
          * @param {string} message The text to display.
-         * @param {object} parameters Parameters for text rendering and sprite creation.
-         * @returns {THREE.Sprite} The created text sprite.
+         * @param {object} parameters Parameters for text rendering and mesh creation.
+         * @returns {THREE.Mesh} The created 3D text mesh.
          */
-        function createTextSprite(message, parameters) {
+        function createText3DMesh(message, parameters) {
             if (parameters === undefined) parameters = {};
 
             const fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Roboto";
             const fontsize = parameters.hasOwnProperty("fontsize") ? parameters["fontsize"] : 80;
-            const borderThickness = parameters.hasOwnProperty("borderThickness") ? parameters["borderThickness"] : 4;
-            const borderColor = parameters.hasOwnProperty("borderColor") ? parameters["borderColor"] : { r: 0, g: 0, b: 0, a: 1.0 };
-            const backgroundColor = parameters.hasOwnProperty("backgroundColor") ? parameters["backgroundColor"] : { r: 255, g: 255, b: 255, a: 0.0 }; // Transparent background
             const textColor = parameters.hasOwnProperty("textColor") ? parameters["textColor"] : { r: 255, g: 165, b: 0, a: 1.0 }; // Default Orange color
+            const extrusionDepth = parameters.hasOwnProperty("extrusionDepth") ? parameters["extrusionDepth"] : 0.5; // Small depth for extrusion
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             context.font = "Bold " + fontsize + "px " + fontface;
 
-            // Get text metrics
+            // Measure text to set canvas dimensions
             const metrics = context.measureText(message);
             const textWidth = metrics.width;
-            const textHeight = fontsize; // Approximate height
+            const textHeight = fontsize * 1.2; // A bit more height for descenders/ascenders
 
-            // Adjust canvas size to fit text
-            canvas.width = textWidth + borderThickness * 2;
-            canvas.height = textHeight + borderThickness * 2;
+            // Set canvas dimensions (power of 2 for optimal texture performance, though not strictly required for CanvasTexture)
+            canvas.width = Math.pow(2, Math.ceil(Math.log2(textWidth)));
+            canvas.height = Math.pow(2, Math.ceil(Math.log2(textHeight)));
 
-            // Re-set font after resizing canvas
+            // Re-set font and drawing properties after resizing canvas
             context.font = "Bold " + fontsize + "px " + fontface;
             context.textAlign = "center";
             context.textBaseline = "middle";
-
-            // Background color
-            context.fillStyle = "rgba(" + backgroundColor.r + "," + backgroundColor.g + "," + backgroundColor.b + "," + backgroundColor.a + ")";
-            context.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Border color
-            context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," + borderColor.b + "," + borderColor.a + ")";
-            context.lineWidth = borderThickness;
-
-            // Text color
-            context.fillStyle = "rgba(" + textColor.r + "," + textColor.g + "," + textColor.b + "," + textColor.a + ")";
+            context.fillStyle = `rgba(${textColor.r},${textColor.g},${textColor.b},${textColor.a})`;
             context.fillText(message, canvas.width / 2, canvas.height / 2);
 
-            // Canvas texture
+            // Create texture from canvas
             const texture = new THREE.CanvasTexture(canvas);
-            texture.minFilter = THREE.LinearFilter; // Smoother scaling for text
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter; // For sharper text when magnified
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
 
-            // Sprite material
-            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-            const sprite = new THREE.Sprite(spriteMaterial);
+            // Create material with the text texture
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
 
-            // Scale sprite based on canvas dimensions to maintain aspect ratio
+            // Create a thin box geometry for the extruded text effect
+            // Width and height of the box should match the aspect ratio of the text on the canvas
             const aspectRatio = canvas.width / canvas.height;
-            const spriteHeight = 5; // Desired visible height in 3D scene
-            const spriteWidth = spriteHeight * aspectRatio;
-            sprite.scale.set(spriteWidth, spriteHeight, 1);
+            const meshHeight = 5; // Base height in 3D scene, adjust as needed
+            const meshWidth = meshHeight * aspectRatio;
 
-            return sprite;
+            const geometry = new THREE.BoxGeometry(meshWidth, meshHeight, extrusionDepth);
+
+            // Create the mesh
+            const textMesh = new THREE.Mesh(geometry, material);
+
+            return textMesh;
         }
 
         // Function to update the displayed year and keywords
@@ -319,11 +626,27 @@
             yearTexture.needsUpdate = true; // Tell Three.js to re-render the texture
 
             // Update sphere and node colors based on the current year
-            const theme = yearThemes.get(currentYear);
+            let theme = yearThemes.get(currentYear);
+            // Fallback for years not explicitly defined in yearThemes
+            if (!theme) {
+                if (currentYear >= 1850 && currentYear < 1900) theme = yearThemes.get(1850);
+                else if (currentYear >= 1900 && currentYear < 1940) theme = yearThemes.get(1900);
+                else if (currentYear >= 1940 && currentYear < 1960) theme = yearThemes.get(1940);
+                else if (currentYear >= 1960 && currentYear < 1980) theme = yearThemes.get(1960);
+                else if (currentYear >= 1980 && currentYear < 1990) theme = yearThemes.get(1980);
+                else if (currentYear >= 1990 && currentYear < 2000) theme = yearThemes.get(1990);
+                else if (currentYear >= 2000 && currentYear < 2010) theme = yearThemes.get(2000);
+                else if (currentYear >= 2010 && currentYear < 2020) theme = yearThemes.get(2010);
+                else if (currentYear >= 2020) theme = yearThemes.get(2020);
+                else theme = { coreColor: 0x63b3ed, nodeColor: 0x90cdf4 }; // Default
+            }
+
+
             if (internetCore && internetCore.material) {
                 internetCore.material.color.set(theme.coreColor);
                 internetCore.material.emissive.set(theme.coreColor); // Keep emissive consistent
             }
+            // Ensure nodeMaterial is defined before setting its color
             if (nodeMaterial) {
                 nodeMaterial.color.set(theme.nodeColor);
             }
@@ -338,27 +661,32 @@
             keywords.forEach((keyword) => {
                 // Randomly select a color for the keyword
                 const randomColor = keywordColors[Math.floor(Math.random() * keywordColors.length)];
-                const sprite = createTextSprite(keyword, {
+                const textMesh = createText3DMesh(keyword, {
                     fontsize: 80,
-                    textColor: randomColor
+                    textColor: randomColor,
+                    extrusionDepth: 0.5 // Adjust depth as needed
                 });
 
                 // Position keywords randomly around the core, but a bit further out
                 const phi = Math.random() * Math.PI * 2;
                 const theta = Math.random() * Math.PI;
                 const radius = 35 + Math.random() * 15; // Further out than nodes
-                sprite.position.set(
+                textMesh.position.set(
                     radius * Math.sin(theta) * Math.cos(phi),
                     radius * Math.sin(theta) * Math.sin(phi),
                     radius * Math.cos(theta)
                 );
-                keywordSprites.push(sprite);
-                scene.add(sprite);
+                // Make the text face the center (or slightly offset towards camera for better visibility)
+                textMesh.lookAt(scene.position); // Make text face the center of the scene
+                // For now, let's make them face the center for a more consistent 3D effect.
+
+                keywordSprites.push(textMesh);
+                scene.add(textMesh);
             });
         }
 
         // Initialize Three.js scene
-        function init() {
+        async function init() { // Made async to await populateYearKeywords
             const container = document.getElementById('webgl-container');
 
             // Scene
@@ -389,7 +717,7 @@
             backgroundCanvas.width = 1; // Smallest width for solid color
             backgroundCanvas.height = 1; // Smallest height for solid color
 
-            backgroundContext.fillStyle = '#fefcbf'; // Light Yellow (tailwind yellow-100)
+            backgroundContext.fillStyle = '#fefce8'; // Light Yellow (tailwind yellow-50) - Brighter
             backgroundContext.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
 
             const backgroundTexture = new THREE.CanvasTexture(backgroundCanvas);
@@ -464,6 +792,14 @@
             document.addEventListener('wheel', onDocumentMouseWheel); // Add mouse wheel listener
             document.addEventListener('resize', onWindowResize);
 
+            // Touch event listeners for mobile scrolling
+            document.addEventListener('touchstart', onDocumentTouchStart, { passive: false });
+            document.addEventListener('touchmove', onDocumentTouchMove, { passive: false });
+            document.addEventListener('touchend', onDocumentTouchEnd, { passive: false });
+
+            // Populate yearKeywords map asynchronously
+            await populateYearKeywords(); // Await the loading of keywords
+
             // Initial update of year and keywords
             updateYearAndKeywords();
 
@@ -504,6 +840,49 @@
 
             if (currentYear !== oldYear) {
                 updateYearAndKeywords(); // Update if year changed
+            }
+        }
+
+        // Handle touch start for mobile scrolling
+        function onDocumentTouchStart(event) {
+            event.preventDefault(); // Prevent default touch behavior like scrolling
+            if (event.touches.length === 1) {
+                touchStartY = event.touches[0].pageY;
+            }
+        }
+
+        // Handle touch move for mobile scrolling
+        function onDocumentTouchMove(event) {
+            event.preventDefault(); // Prevent default touch behavior
+            if (event.touches.length === 1) {
+                const currentY = event.touches[0].pageY;
+                const deltaY = currentY - touchStartY;
+
+                // Update mouseX/mouseY for camera rotation
+                mouseX = (event.touches[0].clientX - windowHalfX);
+                mouseY = (event.touches[0].clientY - windowHalfY);
+            }
+        }
+
+        // Handle touch end for mobile scrolling
+        function onDocumentTouchEnd(event) {
+            event.preventDefault(); // Prevent default touch behavior
+            if (event.changedTouches.length === 1) {
+                const endY = event.changedTouches[0].pageY;
+                const deltaY = endY - touchStartY;
+
+                const oldYear = currentYear;
+                if (deltaY > swipeThreshold) {
+                    // Swiped down, go to previous year
+                    currentYear = Math.max(minYear, currentYear - 1);
+                } else if (deltaY < -swipeThreshold) {
+                    // Swiped up, go to next year
+                    currentYear = Math.min(maxYear, currentYear + 1);
+                }
+
+                if (currentYear !== oldYear) {
+                    updateYearAndKeywords(); // Update if year changed
+                }
             }
         }
 
